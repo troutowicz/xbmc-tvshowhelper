@@ -19,9 +19,15 @@
 # limitations under the License.
 #########################################################################
 
-import sys, math, csv, ConfigParser
+from __future__ import unicode_literals
+import sys, math, csv
 import logging, logging.config
 from datetime import date
+
+if sys.version_info >= (3,0,0):
+    import configparser as ConfigParser
+else:
+    import ConfigParser
 
 from sqlalchemy import create_engine, Table, MetaData, func
 from sqlalchemy.exc import ProgrammingError
@@ -75,7 +81,7 @@ class TvShowHelper:
             return engine
         except ProgrammingError:
             self.__log.error('Connection to database ' + self.__xbmcDb + ' failed')
-            print 'Connection to database ' + self.__xbmcDb + ' failed'
+            print('Connection to database ' + self.__xbmcDb + ' failed')
 
     def hasEpisodeAired(self, episode):
             if type(episode.FirstAired) is date:
@@ -139,17 +145,17 @@ class TvShowHelper:
             # Season 0 is TV show specials
             if int(tvShow[1]) == 0:
                 continue
-            title = tvShow[0].encode('utf-8')
+            title = tvShow[0]
             seriesId = tvShow[3]
             season = tvShow[1]
             localEpisodes = tvShow[2]
 
-            self.__log.debug('Checking series {:s} with id: {:s} and season: {:s}'.format(title,  seriesId,  season))
+            self.__log.debug('Checking series {} with id: {} and season: {}'.format(title,  seriesId,  season))
 
             numEpisodes = self.getNumAiredEpisodes(int(seriesId),  int(season))
             fullEpisodes = range(1, numEpisodes + 1)
 
-            self.__log.debug('{:35s}: Season {:2s} has {:2d}/{:2d} episodes'.format(title,  season,  localEpisodes,  numEpisodes))
+            self.__log.debug('{:35}: Season {:2} has {:2d}/{:2d} episodes'.format(title,  season,  localEpisodes,  numEpisodes))
 
             if int(localEpisodes) < int(numEpisodes):
                 # Select all availalbe Episodes of current Series and Season
@@ -172,7 +178,7 @@ class TvShowHelper:
                 for episode in episodes:
                     episodesFound.append(episode[0])
 
-                episodesFound = map(int, episodesFound)
+                episodesFound = list(map(int, episodesFound))
                 episodesMissing = list(set(fullEpisodes) - set(episodesFound))
                 episodesFound.sort(key=int)
                 episodesMissing.sort(key=int)
@@ -197,7 +203,12 @@ class TvShowHelper:
 
         sys.stdout.write('\n')
 
-        with open('incomplete_tv_shows.csv', 'wb') as f:
+        if sys.version_info >= (3,0,0):
+            f = open('incomplete_tv_shows.csv', 'w', newline='')
+        else:
+            f = open('incomplete_tv_shows.csv', 'wb')
+
+        with f:
             writer = csv.writer(f)
             writer.writerow(['Title', 'Season (Local/Available)', 'Missing'])
 
